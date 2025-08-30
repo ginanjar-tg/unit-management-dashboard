@@ -19,3 +19,15 @@ class UnitSerializer(serializers.ModelSerializer):
         if value not in valid_statuses:
             raise serializers.ValidationError(f"Status must be one of: {', '.join(valid_statuses)}")
         return value
+    
+    def validate(self, attrs):
+        if self.instance:
+            current_status = self.instance.status
+            new_status = attrs.get('status', current_status)
+            
+            if current_status == 'Occupied' and new_status == 'Available':
+                raise serializers.ValidationError({
+                    'status': 'Cannot change status directly from Occupied to Available. Must first be set to Cleaning In Progress or Maintenance Needed.'
+                })
+        
+        return attrs
