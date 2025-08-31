@@ -1,127 +1,89 @@
 # Unit Management Dashboard
 
-A full-stack web application for managing capsule and cabin units with real-time status tracking and business rule enforcement.
+Aplikasi full-stack untuk mengelola unit kapsul & kabin dengan pelacakan status real-time dan validasi aturan bisnis.
 
-## Instructions
+## Persyaratan
+- Docker & Docker Compose
+- (Opsional) Python 3.8+, Node.js 18+, PostgreSQL untuk development lokal
 
-### Prerequisites
-- Python 3.8+
-- Node.js 18+
-- PostgreSQL 12+
+## Setup & Menjalankan Aplikasi
 
-### Backend Setup (Django REST API)
+### Metode Utama: Docker Compose
+```bash
+# 1. Salin file environment
+cp .env.example .env
 
-1. **Database Setup**
-```sql
-CREATE DATABASE unit_management_db;
+# 2. Tarik image pra-bangun dan jalankan
+docker-compose pull
+docker-compose up -d
 ```
 
-2. **Install Dependencies**
+**Akses aplikasi:**
+- Frontend: `http://localhost:3000`
+- Backend API: `http://localhost:8000`
+- Database: `localhost:5432`
+
+### Setup Lokal (Development)
 ```bash
+# Backend
+cd backend
 pip install -r requirements.txt
-```
-
-3. **Configure Database**
-Update `backend/settings.py` with your PostgreSQL credentials if needed.
-
-4. **Run Migrations**
-```bash
-python manage.py makemigrations
 python manage.py migrate
-python manage.py createsuperuser
-```
-
-5. **Start Backend Server**
-```bash
 python manage.py runserver
 ```
-Backend runs on `http://localhost:8000`
 
-### Frontend Setup (Next.js)
-
-1. **Install Dependencies**
 ```bash
+# Frontend (terminal terpisah)
 cd frontend
 npm install
-```
-
-2. **Start Development Server**
-```bash
 npm run dev
 ```
-Frontend runs on `http://localhost:3000`
 
-### Testing the Application
+## Alur Kerja Docker
 
-1. Open `http://localhost:3000` in your browser
-2. Use the interface to create units, filter by type/status, and update statuses
-3. Test the business rule by trying to change a unit from Occupied directly to Available
+### Developer (Build & Push)
+```bash
+# Build dan push image ke Docker Hub
+docker build -t ginanjartg/unit-dashboard-backend:latest ./backend
+docker build -t ginanjartg/unit-dashboard-frontend:latest ./frontend
+docker push ginanjartg/unit-dashboard-backend:latest
+docker push ginanjartg/unit-dashboard-frontend:latest
+```
 
-## Technical Choices and Architecture
+### Client/Tester (Pull & Run)
+```bash
+# Cukup tarik image dan jalankan tanpa build
+docker-compose pull
+docker-compose up -d
+```
 
-### Stack
+## Arsitektur & Pilihan Teknis
+
+**Stack:**
 - **Backend**: Django REST Framework + PostgreSQL
 - **Frontend**: Next.js + TypeScript + Tailwind CSS
+- **Kontainerisasi**: Docker (image terpisah untuk skalabilitas independen)
 
-### Project Structure
-```
-unit-management-dashboard/
-├── backend/                    # Django REST API
-│   ├── settings.py            # Database & CORS config
-│   ├── urls.py               # Main routing
-│   └── unit_dashboard/        # Core app
-│       ├── models.py         # Unit data model
-│       ├── serializers.py    # API validation & serialization
-│       ├── views.py          # API endpoints
-│       └── urls.py           # App routing
-├── frontend/                  # Next.js application
-│   └── src/
-│       ├── app/              # App router pages
-│       ├── components/       # React components
-│       ├── services/         # API integration
-│       └── types/            # TypeScript definitions
-├── manage.py                 # Django management
-└── requirements.txt          # Python dependencies
-```
+**Keputusan Arsitektur:**
+- RESTful API dengan pemisahan backend-frontend yang jelas
+- Validasi status di backend untuk integritas data
+- PostgreSQL untuk ACID compliance
+- Next.js standalone output untuk optimasi produksi
 
-### Architecture Decisions
-- **RESTful API**: Clean separation between frontend and backend
-- **TypeScript**: Type safety and better developer experience
-- **Component-based UI**: Reusable, maintainable frontend architecture
-- **PostgreSQL**: ACID compliance, robust data integrity
-- **CORS Configuration**: Secure cross-origin requests between frontend and backend
+## Justifikasi Aturan Perubahan Status
 
-### API Endpoints
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/units` | List units with filtering & pagination |
-| POST | `/api/units` | Create new unit |
-| GET | `/api/units/{id}` | Get unit details |
-| PUT | `/api/units/{id}` | Update unit |
+**Aturan Bisnis:** Unit `Occupied` tidak boleh langsung ke `Available` - harus melalui `Cleaning In Progress` atau `Maintenance Needed`.
 
-## Status Change Rule Justification
+**Alasan:**
+- Memastikan prosedur kebersihan/maintenance terpenuhi
+- Menjaga konsistensi operasional
 
-### Business Rule
-**Occupied units cannot transition directly to Available.** They must first go through either:
-- **Cleaning In Progress** (for routine cleaning)
-- **Maintenance Needed** (for repairs/maintenance)
+**Implementasi:**
+- Validasi di `UnitSerializer.validate()` (backend)
+- Error handling di frontend dengan pesan yang jelas
+- Aturan tidak bisa di-bypass karena validasi server-side
 
-### Implementation Strategy
-
-**Backend Enforcement**: The business rule is enforced in `UnitSerializer.validate()` method, which:
-- Validates the transition from current status to requested status
-- Returns HTTP 400 with descriptive error message for invalid transitions
-- Ensures data integrity at the API level
-
-**Frontend Handling**: The UI allows users to select any status but gracefully handles validation errors:
-- All status options remain visible in dropdowns
-- Invalid transitions trigger error messages from the backend
-- Users receive clear feedback about required intermediate steps
-
-### Why Backend Validation?
-1. **Data Integrity**: Prevents invalid states regardless of client implementation
-2. **Security**: Rules cannot be bypassed by malicious requests
-3. **Consistency**: Same validation applies to all API consumers
-4. **Maintainability**: Business logic centralized in one location
-
-This approach ensures the business rule is consistently enforced while providing a transparent user experience that guides users toward valid transitions. 
+## Testing Cepat
+1. Buka `http://localhost:3000`
+2. Buat unit baru dan ubah statusnya
+3. Coba transisi terlarang (Occupied → Available) - harus menampilkan error
