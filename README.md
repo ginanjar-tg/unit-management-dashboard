@@ -1,89 +1,60 @@
 # Unit Management Dashboard
 
-Aplikasi full-stack untuk mengelola unit kapsul & kabin dengan pelacakan status real-time dan validasi aturan bisnis.
+Aplikasi full-stack untuk memantau status kapsul & kabin secara real-time dengan validasi aturan bisnis.
 
 ## Persyaratan
 - Docker & Docker Compose
-- (Opsional) Python 3.8+, Node.js 18+, PostgreSQL untuk development lokal
+- (Opsional) Python 3.8+, Node.js 18+, PostgreSQL untuk mode pengembangan lokal
 
-## Setup & Menjalankan Aplikasi
+## Menjalankan Aplikasi
 
-### Metode Utama: Docker Compose
+### Dengan Docker Compose (disarankan)
+Jalankan layanan:
+   ```bash
+   docker-compose pull   # menarik image yang sudah dibangun
+   docker-compose up -d  # menjalankan service
+   ```
+
+Akses aplikasi:
+- Frontend : http://localhost:3000
+- Backend  : http://localhost:8000
+- Database : localhost:5432
+
+### Mode Lokal (opsional)
+Backend:
 ```bash
-# 1. Salin file environment
-cp .env.example .env
-
-# 2. Tarik image pra-bangun dan jalankan
-docker-compose pull
-docker-compose up -d
-```
-
-**Akses aplikasi:**
-- Frontend: `http://localhost:3000`
-- Backend API: `http://localhost:8000`
-- Database: `localhost:5432`
-
-### Setup Lokal (Development)
-```bash
-# Backend
 cd backend
 pip install -r requirements.txt
 python manage.py migrate
 python manage.py runserver
 ```
-
+Frontend (terminal terpisah):
 ```bash
-# Frontend (terminal terpisah)
 cd frontend
 npm install
 npm run dev
 ```
 
-## Alur Kerja Docker
+## Pengujian Cepat
+1. Buka UI di browser.
+2. Buat unit baru atau ubah statusnya.
+3. Coba transisi terlarang `Occupied → Available` – sistem harus menolak dan menampilkan pesan error.
 
-### Developer (Build & Push)
-```bash
-# Build dan push image ke Docker Hub
-docker build -t ginanjartg/unit-dashboard-backend:latest ./backend
-docker build -t ginanjartg/unit-dashboard-frontend:latest ./frontend
-docker push ginanjartg/unit-dashboard-backend:latest
-docker push ginanjartg/unit-dashboard-frontend:latest
-```
+## Tumpukan Teknologi & Arsitektur
+- **Backend**  : Django REST Framework + PostgreSQL
+- **Frontend** : Next.js + TypeScript + Tailwind CSS
+- **Database** : PostgreSQL
+- **Kontainer**: Docker (image terpisah backend & frontend)
 
-### Client/Tester (Pull & Run)
-```bash
-# Cukup tarik image dan jalankan tanpa build
-docker-compose pull
-docker-compose up -d
-```
+**Alasan Pemisahan Backend–Frontend**
+- Skalabilitas dan deployment independen.
+- Tanggung jawab terpisah antara API dan UI.
 
-## Arsitektur & Pilihan Teknis
+## Aturan Bisnis Status Unit
+- Unit `Occupied` tidak boleh langsung ke `Available`.
+- Wajib melalui `Cleaning In Progress` atau `Maintenance Needed`.
 
-**Stack:**
-- **Backend**: Django REST Framework + PostgreSQL
-- **Frontend**: Next.js + TypeScript + Tailwind CSS
-- **Kontainerisasi**: Docker (image terpisah untuk skalabilitas independen)
-
-**Keputusan Arsitektur:**
-- RESTful API dengan pemisahan backend-frontend yang jelas
-- Validasi status di backend untuk integritas data
-- PostgreSQL untuk ACID compliance
-- Next.js standalone output untuk optimasi produksi
-
-## Justifikasi Aturan Perubahan Status
-
-**Aturan Bisnis:** Unit `Occupied` tidak boleh langsung ke `Available` - harus melalui `Cleaning In Progress` atau `Maintenance Needed`.
-
-**Alasan:**
-- Memastikan prosedur kebersihan/maintenance terpenuhi
-- Menjaga konsistensi operasional
-
-**Implementasi:**
-- Validasi di `UnitSerializer.validate()` (backend)
-- Error handling di frontend dengan pesan yang jelas
-- Aturan tidak bisa di-bypass karena validasi server-side
-
-## Testing Cepat
-1. Buka `http://localhost:3000`
-2. Buat unit baru dan ubah statusnya
-3. Coba transisi terlarang (Occupied → Available) - harus menampilkan error
+**Implementasi & Validasi**
+- Dicek di `UnitSerializer.validate()` pada backend.
+- Frontend menampilkan pesan kesalahan dari API.
+- Validasi server-side mencegah bypass melalui klien.
