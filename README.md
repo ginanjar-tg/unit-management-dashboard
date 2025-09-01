@@ -1,6 +1,7 @@
 # Unit Management Dashboard
 
 Aplikasi full-stack untuk memantau status kapsul & kabin secara real-time dengan validasi aturan bisnis.
+Dibuat oleh Ginanjar Tubagus Gumilar sebagai asesmen dari skill test Bobobox
 
 ## Persyaratan
 - Docker & Docker Compose
@@ -11,8 +12,7 @@ Aplikasi full-stack untuk memantau status kapsul & kabin secara real-time dengan
 ### Dengan Docker Compose (disarankan)
 Jalankan layanan:
    ```bash
-   docker-compose pull   # menarik image yang sudah dibangun
-   docker-compose up -d  # menjalankan service
+   docker compose up -d
    ```
 
 Akses aplikasi:
