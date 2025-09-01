@@ -20,21 +20,6 @@ Akses aplikasi:
 - Backend  : http://localhost:8000
 - Database : localhost:5432
 
-### Mode Lokal (opsional)
-Backend:
-```bash
-cd backend
-pip install -r requirements.txt
-python manage.py migrate
-python manage.py runserver
-```
-Frontend (terminal terpisah):
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
 ## Pengujian Cepat
 1. Buka UI di browser.
 2. Buat unit baru atau ubah statusnya.
